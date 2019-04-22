@@ -5,7 +5,8 @@ const initialState = {
     userNotebooks: [],
     activeNotebook: 0,
     activeNote: 0, // index in userNotes
-    uid: null
+    uid: null,
+    isLoadingNote: false
 };
 
 function reducer (state = initialState, action) {
@@ -39,6 +40,11 @@ function reducer (state = initialState, action) {
             return {
                 ...state,
                 uid: action.payload
+            };
+        case "SET_LOADING_NOTE": 
+            return {
+                ...state,
+                isLoadingNote: action.payload
             };
         default:
             return state;

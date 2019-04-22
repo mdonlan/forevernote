@@ -3,12 +3,13 @@ import { connect } from 'react-redux';
 import styled from 'styled-components';
 import { Route, Switch, withRouter } from 'react-router-dom';
 
+import { watchUserStatus } from '../../API';
+
 import Signup from "./Signup";
 import Login from "./Login";
 import TopNav from './TopNav';
 import Home from './Home';
 
-import Auth from "./Auth";
 
 const Wrapper = styled.div`
     height: 100%;
@@ -18,8 +19,7 @@ const Wrapper = styled.div`
 class App extends React.Component {
     constructor (props) {
         super(props);
-
-        this.auth = new Auth(this.props.dispatch);
+        watchUserStatus(this.props.dispatch); // start watching whether user is logged in or not
     }
 
     render () {

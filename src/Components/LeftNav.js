@@ -1,8 +1,9 @@
 import React from "react";
 import { connect } from 'react-redux';
 import styled from 'styled-components';
+import shortid from 'shortid';
 
-import firebase from "../../firebaseConfig";
+import { loadUserNotebooks, createNewNote, createNewNotebook } from '../../API';
 
 const Wrapper = styled.div`
     height: 100%;
@@ -13,7 +14,7 @@ const Wrapper = styled.div`
     color: #dddddd;
 `;
 
-const NewNote = styled.div`
+const NewNoteBtn = styled.div`
     height: 50px;
     display: flex;
     justify-content: center;
@@ -26,7 +27,44 @@ const NewNote = styled.div`
     }
 `;
 
-const Split = styled.div`
+const NewNotebookBtn = styled.div`
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: #255429;
+
+    :hover {
+        background: #26822E;
+    }
+`;
+
+const NewNotebookForm = styled.form`
+   
+`;
+
+const NewNotebookName = styled.input`
+   
+`;
+
+const NewNotebookSubmit = styled.input`
+   
+`;
+
+const NewNoteForm = styled.form`
+   
+`;
+
+const NewNoteName = styled.input`
+   
+`;
+
+const NewNoteSubmit = styled.input`
+   
+`;
+
+const UserNoteBooks = styled.div`
     display: flex;
     height: 100%;
 `;
@@ -43,11 +81,11 @@ const Notebooks = styled.div`
 `;
 
 const Notebook = styled.div`
-    padding: 5px;
-    background: #234282;
+    padding: 8px;
     transition: 0.3s;
     cursor: pointer;
-    margin-bottom: 3px;
+
+    background: ${props => props.activeNotebook == props.index ? "#2164F0" : "#234282"};
 
     :hover {
         background: #2351B1;
@@ -61,11 +99,11 @@ const Notes = styled.div`
 `;
 
 const Note = styled.div`
-    padding: 5px;
-    background: #234282;
+    padding: 8px;
     transition: 0.3s;
     cursor: pointer;
-    margin-bottom: 3px;
+
+    background: ${props => props.activeNote == props.index ? "#2164F0" : "#234282"};
 
     :hover {
         background: #2351B1;
@@ -74,92 +112,85 @@ const Note = styled.div`
 
 class LeftNav extends React.Component {
 
+    state = {
+        creatingNewNotebook: false,
+        creatingNewNote: false,
+        newNotebookTitleElem: React.createRef(),
+        newNoteTitleElem: React.createRef()
+    }
+
     setActiveNotebookHandler (i) {
-        this.props.dispatch({
-            type: "SET_ACTIVE_NOTEBOOK",
-            payload: i
-        });
+        this.props.dispatch({ type: "SET_ACTIVE_NOTEBOOK", payload: i });
     }
     
     setActiveNoteHandler (i) {
+        // when we click a new not load all notes from the server
+        // this is not efficient, we can do this better
+        this.props.dispatch({ type: "SET_ACTIVE_NOTE", payload: i });
+        this.props.dispatch({ type: "SET_LOADING_NOTE", payload: true });
 
-        // let notes = [...this.props.userNotes];
-        // let activeNote = notes.find((n) => {return n.title == note.title});
-        // activeNote.body = note.body;
-
-        // this.props.dispatch({
-        //     type: "SET_USER_NOTES",
-        //     payload: notes
-        // });
-
-        // when we click on a new note we want to save the active note to firestore
-        // before loading the new note
-        // firebase.firestore().collection("users").doc(nextProps.uid).get()
-        // .then((docSnapshot) => {    
-        //     if (docSnapshot.exists) {
-        //         let notes = docSnapshot.data().notes;
-        //         let activeNote = notes.find((note) => {return note.title == this.props.activeNote.title});
-                
-        //         this.props.dispatch({
-        //             type: "SET_USER_NOTES",
-        //             payload: notes
-        //         });
-        //     } else {
-        //         console.log('document NOT found');
-        //     }          
-        // })
-        // .catch((error) => {
-        //     console.log(error);
-        // })
-        // console.log(this.props)
-        // let notes = [...this.props.userNotes];
-        // let activeNote = notes.find((n) => {return n.title == this.props.activeNote.title});
-        // if (activeNote) {
-        //     let notes = [...this.props.userNotes];
-        //     let activeNote = notes.find((n) => {return n.title == this.props.activeNote.title});
-        //     // activeNote.body = this.editor.body;
-
-        //     this.props.dispatch({
-        //         type: "SET_USER_NOTES",
-        //         payload: notes
-        //     });
-        // }
-
-        firebase.firestore().collection("users").doc(this.props.uid).get()
-        .then((doc) => {    
-            if (doc.exists) {
-                this.props.dispatch({
-                    type: 'SET_USER_NOTEBOOKS',
-                    payload: doc.data().notebooks
-                });
-            } 
-            else {
-                console.log('document NOT found');
-            }          
-        })
-        .catch((error) => {
-            console.log(error);
-        });
-
-        this.props.dispatch({
-            type: "SET_ACTIVE_NOTE",
-            payload: i
-        });
+        loadUserNotebooks(this.props.dispatch, this.props.uid);
     }
     
     createNewNoteHandler = () => {
+        this.setState({ creatingNewNote: true });
+    }
+
+    createNewNotebookHandler = () => {
+        this.setState({ creatingNewNotebook: true });
+    }
+
+    handleSubmitNewNote = (e) => {
+        e.preventDefault(); // prevent page reload 
+
+        // create a new notebook and add it to the firebase notebooks
+        const newNote = {
+            title: this.state.newNoteTitleElem.current.value,
+            body: "",
+            id: shortid.generate()
+        };
+
+        createNewNote(this.props.uid, this.props.activeNotebook, newNote);
+    }
+
+    handleSubmitNewNotebook = (e) => {
+        e.preventDefault(); // prevent page reload 
+
+        // create a new notebook and add it to the firebase notebooks
+        const newNotebook = {
+            name: this.state.newNotebookTitleElem.current.value,
+            notes: []
+        };
+
+        createNewNotebook(this.props.uid, newNotebook);
     }
 
     render () {
         return (
             <Wrapper>
-                <NewNote onClick={this.createNewNoteHandler}>new note</NewNote>
+                <NewNoteBtn onClick={this.createNewNoteHandler}>New Note</NewNoteBtn>
+                <NewNotebookBtn onClick={this.createNewNotebookHandler}>New Notebook</NewNotebookBtn>
+                
+                {this.state.creatingNewNotebook &&
+                    <NewNotebookForm onSubmit={this.handleSubmitNewNotebook}>
+                        <NewNotebookName ref={this.state.newNotebookTitleElem} placeholder="Notebook Title"></NewNotebookName>
+                        <NewNotebookSubmit type="submit" value="Submit"></NewNotebookSubmit>
+                    </NewNotebookForm>
+                }
+
+                {this.state.creatingNewNote &&
+                    <NewNotebookForm onSubmit={this.handleSubmitNewNote}>
+                        <NewNotebookName ref={this.state.newNoteTitleElem} placeholder="Notebook Title"></NewNotebookName>
+                        <NewNotebookSubmit type="submit" value="Submit"></NewNotebookSubmit>
+                    </NewNotebookForm>
+                }
+
                 {this.props.userNotebooks.length > 0 &&
-                    <Split>
+                    <UserNoteBooks>
                         <Notebooks>
                             {this.props.userNotebooks.map((notebook, i) => {
                                 return (
-                                    <Notebook key={notebook.name} onClick={() => {this.setActiveNotebookHandler(i)}} >{notebook.name}</Notebook>
+                                    <Notebook activeNotebook={this.props.activeNotebook} index={i}  key={notebook.name} onClick={() => {this.setActiveNotebookHandler(i)}} >{notebook.name}</Notebook>
                                 )
                             })}
                         </Notebooks>
@@ -167,11 +198,11 @@ class LeftNav extends React.Component {
                         <Notes>
                             {this.props.userNotebooks[this.props.activeNotebook].notes.map((note, i) => {
                                 return (
-                                    <Note key={note.id} onClick={() => {this.setActiveNoteHandler(i)}} >{note.title}</Note>
+                                    <Note activeNote={this.props.activeNote} index={i} key={note.id} onClick={() => {this.setActiveNoteHandler(i)}} >{note.title}</Note>
                                 )
                             })}
                         </Notes>
-                    </Split>
+                    </UserNoteBooks>
                 }
             </Wrapper>
         );
@@ -188,4 +219,3 @@ const mapStateToProps = (state) => {
 };
 
 export default connect(mapStateToProps)(LeftNav);
-
