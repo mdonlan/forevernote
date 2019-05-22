@@ -13,7 +13,7 @@ const Wrapper = styled.div`
 `;
 
 const Editable = styled.div`
-    height: calc(100% - 20px);
+    height: calc(100% - 52px);
     width: calc(100% - 20px);
     padding: 10px;
     outline: 0px solid transparent;
@@ -34,11 +34,25 @@ const LoadingContainer = styled.div`
     background: #333333;
 `;
 
-const Buttons = styled.div`
+const EditorTop = styled.div`
     height: 30px;
     width: 100%;
     display: flex;
     border-bottom: 2px solid #111111;
+`;
+
+const Styles = styled.div`
+    display: flex;
+    width: 25%;
+    height: 100%;
+`;
+
+const Title = styled.div`
+    width: 50%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 `;
 
 const Button = styled.div`
@@ -60,8 +74,9 @@ const Button = styled.div`
 class Editor extends React.Component {
 
     state = {
-        content: null, // entire content of the active note
-        editableElem: React.createRef()
+        // content: null, // entire content of the active note
+        title: null,
+        editableElem: React.createRef(),
     }
 
     componentDidMount () {
@@ -81,6 +96,7 @@ class Editor extends React.Component {
             // if note render a create a new note button
             if (nextProps.userNotebooks[nextProps.activeNotebook].notes.length > 0) {
                 this.state.editableElem.current.innerHTML = nextProps.userNotebooks[nextProps.activeNotebook].notes[nextProps.activeNote].body;
+                this.setState({ title: nextProps.userNotebooks[nextProps.activeNotebook].notes[nextProps.activeNote].title });
             } else {
                 this.state.editableElem.current.innerHTML = "";
             }
@@ -115,13 +131,19 @@ class Editor extends React.Component {
         }
     }
 
+
     render () {
         return (
             <Wrapper>
-                <Buttons>
-                    <Button onMouseDown={() => {event.preventDefault();}} onClick={() => {this.doCommand("bold");}}>B</Button>
-                    <Button onMouseDown={() => {event.preventDefault();}} onClick={() => {this.doCommand("italic");}}>I</Button>
-                </Buttons>
+                <EditorTop>
+                    <Styles>
+                        <Button onMouseDown={() => {event.preventDefault();}} onClick={() => {this.doCommand("bold");}}>B</Button>
+                        <Button onMouseDown={() => {event.preventDefault();}} onClick={() => {this.doCommand("italic");}}>I</Button>
+                    </Styles>
+                    {this.state.title &&
+                        <Title>{this.state.title}</Title>
+                    }
+                </EditorTop>
                 <Editable ref={this.state.editableElem} contentEditable={true} onBlur={this.handleBlur} autoFocus ></Editable>
                 {this.props.isLoadingNote &&
                     <LoadingContainer></LoadingContainer>

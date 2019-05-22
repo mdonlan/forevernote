@@ -1,4 +1,5 @@
 import firebase from './firebaseConfig';
+import store from './src/Redux/Store';
 
 //
 // all interactions with the firebase api will be in this file
@@ -20,12 +21,19 @@ export function watchUserStatus (dispatch) {
     });
 }
 
-export function loadUserNotebooks (dispatch, uid) {
+export function loadUserNotebooks (dispatch, uid, setActiveNote) {
     firebase.firestore().collection("users").doc(uid).get()
     .then((doc) => {    
         if (doc.exists) {
             dispatch({ type: 'SET_USER_NOTEBOOKS', payload: doc.data().notebooks });
             dispatch({ type: "SET_LOADING_NOTE", payload: false });
+
+            // if we are coming from createNewNote then we need to set the newest note as the active note
+            if (setActiveNote) {
+                const state = store.getState();
+                const activeNote = state.userNotebooks[state.activeNotebook].notes.length - 1;
+                dispatch({ type: "SET_ACTIVE_NOTE", payload: activeNote });
+            }
         } 
         else console.log('document NOT found');     
     })
@@ -57,7 +65,7 @@ export function updateNotebooks (dispatch, uid, text, activeNote, activeNotebook
     .catch(error => console.log(error));
 }
 
-export function createNewNote (uid, activeNotebook, newNote) {
+export function createNewNote (uid, dispatch, activeNotebook, newNote) {
     firebase.firestore().collection("users").doc(uid).get()
     .then((doc) => {    
         if (doc.exists) {
@@ -67,7 +75,8 @@ export function createNewNote (uid, activeNotebook, newNote) {
                 notebooks: notebooks
             })
             .then(function() {
-                console.log("Document successfully updated!");
+                console.log("Note added successfully!");
+                loadUserNotebooks(dispatch, uid, true);
             });
         } 
         else console.log('Failed to find document.');       
@@ -86,6 +95,26 @@ export function createNewNotebook (uid, newNotebook) {
             })
             .then(function() {
                 console.log("Document successfully updated!");
+            });
+        } 
+        else console.log('Failed to find document.');       
+    })
+    .catch(error => console.log(error));
+}
+
+export function deleteNote (uid, dispatch, activeNotebook, activeNote) {
+    firebase.firestore().collection("users").doc(uid).get()
+    .then((doc) => {    
+        if (doc.exists) {
+            let notebooks = doc.data().notebooks;
+            let notebook = notebooks[activeNotebook];
+            notebook.notes.splice(activeNote, 1);
+            firebase.firestore().collection("users").doc(uid).update({
+                notebooks: notebooks
+            })
+            .then(function() {
+                console.log("Document successfully updated!");
+                loadUserNotebooks(dispatch, uid);
             });
         } 
         else console.log('Failed to find document.');       

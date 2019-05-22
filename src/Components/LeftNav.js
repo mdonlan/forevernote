@@ -2,8 +2,9 @@ import React from "react";
 import { connect } from 'react-redux';
 import styled from 'styled-components';
 import shortid from 'shortid';
+import { Scrollbars } from 'react-custom-scrollbars';
 
-import { loadUserNotebooks, createNewNote, createNewNotebook } from '../../API';
+import { loadUserNotebooks, createNewNote, createNewNotebook, deleteNote } from '../../API';
 
 const Wrapper = styled.div`
     height: 100%;
@@ -15,7 +16,7 @@ const Wrapper = styled.div`
     border-right: 2px solid #111111;
 `;
 
-const NewNoteBtn = styled.div`
+const NewItemBtn = styled.div`
     height: 50px;
     display: flex;
     position: relative;
@@ -27,54 +28,29 @@ const NewNoteBtn = styled.div`
     transition: 0.3s;
 
     :hover {
-        /* background: #26822E; */
-        background: ${props => props.creatingNewNote ? "#255429;" : "#26822E;"};
+        background: ${props => props.creating ? "#255429;" : "#26822E;"};
     }
 `;
 
-const NewNotebookBtn = styled.div`
-    height: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    background: #255429;
-    border-top: 1px solid #111111;
-    transition: 0.3s;
-
-    :hover {
-        background: #26822E;
-    }
-`;
-
-const NewNotebookForm = styled.form`
-   
-`;
-
-const NewNotebookName = styled.input`
-   
-`;
-
-const NewNotebookSubmit = styled.input`
-   
-`;
-
-const NewNoteForm = styled.form`
+const NewItemForm = styled.form`
    height: 100%;
    width: 100%;
    display: flex;
    margin: 0px;
 `;
 
-const NewNoteName = styled.input`
+const NewItemName = styled.input`
    height: 100%;
    width: 80%;
    background: none;
    border: none;
    outline: none;
+   color: #ffffff;
+   padding: 3px;
+   text-align: center;
 `;
 
-const NewNoteSubmit = styled.input`
+const NewItemSubmit = styled.input`
     height: 100%;
     width: 10%;
     /* background: #14931A; */
@@ -93,10 +69,9 @@ const NewNoteSubmit = styled.input`
     }
 `;
 
-const NewNoteCancel = styled.div`
+const NewItemCancel = styled.div`
    height: 100%;
    width: 10%;
-   /* background: #D52D2D; */
    cursor: pointer;
    display: flex;
    align-items: center;
@@ -127,7 +102,7 @@ const Notebook = styled.div`
     transition: 0.3s;
     cursor: pointer;
 
-    background: ${props => props.activeNotebook == props.index ? "#2164F0" : "#234282"};
+    background: ${props => props.active == props.index ? "#2164F0" : "#234282"};
 
     :hover {
         background: #2351B1;
@@ -137,7 +112,8 @@ const Notebook = styled.div`
 const Notes = styled.div`
     display: flex;
     flex-direction: column;
-    width: calc(50% - 1px);
+    width: 100%;
+    height: 100%;
     border-left: 1px solid #111111;
 `;
 
@@ -145,13 +121,19 @@ const Note = styled.div`
     padding: 8px;
     transition: 0.3s;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
 
-    background: ${props => props.activeNote == props.index ? "#2164F0" : "#234282"};
+    background: ${props => props.active == props.index ? "#2164F0" : "#234282"};
 
     :hover {
         background: #2351B1;
     }
 `;
+
+const NoteTitle = styled.div``;
+const NoteDelete = styled.div``;
+const EditBtn = styled.div``;
 
 class LeftNav extends React.Component {
 
@@ -159,7 +141,8 @@ class LeftNav extends React.Component {
         creatingNewNotebook: false,
         creatingNewNote: false,
         newNotebookTitleElem: React.createRef(),
-        newNoteTitleElem: React.createRef()
+        newNoteTitleElem: React.createRef(),
+        editMode: false
     }
 
     setActiveNotebookHandler (i) {
@@ -185,7 +168,9 @@ class LeftNav extends React.Component {
     }
 
     createNewNotebookHandler = () => {
-        this.setState({ creatingNewNotebook: true });
+        if (!this.state.creatingNewNotebook) {
+            this.setState({ creatingNewNotebook: true });
+        }
     }
 
     handleSubmitNewNote = (e) => {
@@ -198,7 +183,9 @@ class LeftNav extends React.Component {
             id: shortid.generate()
         };
 
-        createNewNote(this.props.uid, this.props.activeNotebook, newNote);
+        createNewNote(this.props.uid, this.props.dispatch, this.props.activeNotebook, newNote);
+
+        this.setState({ creatingNewNote: false });
     }
 
     handleSubmitNewNotebook = (e) => {
@@ -216,43 +203,57 @@ class LeftNav extends React.Component {
     render () {
         return (
             <Wrapper>
-                <NewNoteBtn creatingNewNote={this.state.creatingNewNote} onClick={this.createNewNoteHandler}>
+                <NewItemBtn creating={this.state.creatingNewNote} onClick={this.createNewNoteHandler}>
                     {!this.state.creatingNewNote &&
                         <div>New Note</div>
                     }
                     {this.state.creatingNewNote &&
-                        <NewNoteForm onSubmit={this.handleSubmitNewNote}>
-                            <NewNoteName ref={this.state.newNoteTitleElem} placeholder="Notebook Title"></NewNoteName>
-                            <NewNoteSubmit type="submit" value="&#10004;"></NewNoteSubmit>
-                            <NewNoteCancel onClick={() => {this.setState({ creatingNewNote: false })}}>&#10006;</NewNoteCancel>
-                        </NewNoteForm>
+                        <NewItemForm onSubmit={this.handleSubmitNewNote}>
+                            <NewItemName ref={this.state.newNoteTitleElem} placeholder="Note Title"></NewItemName>
+                            <NewItemSubmit type="submit" value="&#10004;"></NewItemSubmit>
+                            <NewItemCancel onClick={() => {this.setState({ creatingNewNote: false })}}>&#10006;</NewItemCancel>
+                        </NewItemForm>
                     }
-                </NewNoteBtn>
-                <NewNotebookBtn onClick={this.createNewNotebookHandler}>New Notebook</NewNotebookBtn>
-                
-                {this.state.creatingNewNotebook &&
-                    <NewNotebookForm onSubmit={this.handleSubmitNewNotebook}>
-                        <NewNotebookName ref={this.state.newNotebookTitleElem} placeholder="Notebook Title"></NewNotebookName>
-                        <NewNotebookSubmit type="submit" value="Submit"></NewNotebookSubmit>
-                    </NewNotebookForm>
-                }
+                </NewItemBtn>
+
+                <NewItemBtn creating={this.state.creatingNewNotebook} onClick={this.createNewNotebookHandler}>
+                    {!this.state.creatingNewNotebook &&
+                        <div>New Notebook</div>
+                    }
+                    {this.state.creatingNewNotebook &&
+                        <NewItemForm onSubmit={this.handleSubmitNewNotebook}>
+                            <NewItemName ref={this.state.newNotebookTitleElem} placeholder="Notebook Title"></NewItemName>
+                            <NewItemSubmit type="submit" value="&#10004;"></NewItemSubmit>
+                            <NewItemCancel onClick={() => {this.setState({ creatingNewNotebook: false })}}>&#10006;</NewItemCancel>
+                        </NewItemForm>
+                    }
+                </NewItemBtn>
+
+                <EditBtn onClick={() => {this.state.editMode ? this.setState({ editMode: false }) : this.setState({ editMode: true })}}>Edit</EditBtn>
 
                 {this.props.userNotebooks.length > 0 &&
                     <UserNoteBooks>
                         <Notebooks>
                             {this.props.userNotebooks.map((notebook, i) => {
                                 return (
-                                    <Notebook activeNotebook={this.props.activeNotebook} index={i}  key={notebook.name} onClick={() => {this.setActiveNotebookHandler(i)}} >{notebook.name}</Notebook>
+                                    <Notebook active={this.props.activeNotebook} index={i}  key={notebook.name} onClick={() => {this.setActiveNotebookHandler(i)}} >{notebook.name}</Notebook>
                                 )
                             })}
                         </Notebooks>
-                        <Notes>
-                            {this.props.userNotebooks[this.props.activeNotebook].notes.map((note, i) => {
-                                return (
-                                    <Note activeNote={this.props.activeNote} index={i} key={note.id} onClick={() => {this.setActiveNoteHandler(i)}} >{note.title}</Note>
-                                )
-                            })}
-                        </Notes>
+                        <Scrollbars style={{ width: "100%", height: "100%" }}>
+                            <Notes>
+                                {this.props.userNotebooks[this.props.activeNotebook].notes.map((note, i) => {
+                                    return (
+                                        <Note active={this.props.activeNote} index={i} key={note.id} onClick={() => {this.setActiveNoteHandler(i)}} >
+                                            <NoteTitle>{note.title}</NoteTitle>
+                                            {this.state.editMode &&
+                                                <NoteDelete onClick={() => {deleteNote(this.props.uid, this.props.dispatch, this.props.activeNotebook, i)}}>X</NoteDelete>
+                                            }
+                                        </Note>
+                                    )
+                                })}
+                            </Notes>
+                        </Scrollbars>
                     </UserNoteBooks>
                 }
             </Wrapper>
