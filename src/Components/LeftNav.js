@@ -12,18 +12,23 @@ const Wrapper = styled.div`
     display: flex;
     flex-direction: column;
     color: #dddddd;
+    border-right: 2px solid #111111;
 `;
 
 const NewNoteBtn = styled.div`
     height: 50px;
     display: flex;
+    position: relative;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     background: #255429;
+    border-bottom: 1px solid #111111;
+    transition: 0.3s;
 
     :hover {
-        background: #26822E;
+        /* background: #26822E; */
+        background: ${props => props.creatingNewNote ? "#255429;" : "#26822E;"};
     }
 `;
 
@@ -34,6 +39,8 @@ const NewNotebookBtn = styled.div`
     align-items: center;
     cursor: pointer;
     background: #255429;
+    border-top: 1px solid #111111;
+    transition: 0.3s;
 
     :hover {
         background: #26822E;
@@ -53,31 +60,66 @@ const NewNotebookSubmit = styled.input`
 `;
 
 const NewNoteForm = styled.form`
-   
+   height: 100%;
+   width: 100%;
+   display: flex;
+   margin: 0px;
 `;
 
 const NewNoteName = styled.input`
-   
+   height: 100%;
+   width: 80%;
+   background: none;
+   border: none;
+   outline: none;
 `;
 
 const NewNoteSubmit = styled.input`
-   
+    height: 100%;
+    width: 10%;
+    /* background: #14931A; */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0px;
+    margin: 0px;
+    box-sizing: border-box;
+    outline: none;
+    transition: 0.3s;
+    color: #dddddd;
+
+    :hover {
+        background: #18A71F;
+    }
+`;
+
+const NewNoteCancel = styled.div`
+   height: 100%;
+   width: 10%;
+   /* background: #D52D2D; */
+   cursor: pointer;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+
+   transition: 0.3s;
+
+    :hover {
+        background: #F03333;
+    }
 `;
 
 const UserNoteBooks = styled.div`
     display: flex;
     height: 100%;
-`;
-
-const MidLine = styled.div`
-    width: 2px;
-    background: #111111;
+    border-top: 2px solid #111111;
 `;
 
 const Notebooks = styled.div`
     display: flex;
     flex-direction: column;
     width: calc(50% - 1px);
+    border-right: 1px solid #111111;
 `;
 
 const Notebook = styled.div`
@@ -96,6 +138,7 @@ const Notes = styled.div`
     display: flex;
     flex-direction: column;
     width: calc(50% - 1px);
+    border-left: 1px solid #111111;
 `;
 
 const Note = styled.div`
@@ -121,6 +164,9 @@ class LeftNav extends React.Component {
 
     setActiveNotebookHandler (i) {
         this.props.dispatch({ type: "SET_ACTIVE_NOTEBOOK", payload: i });
+        // when loading a new notebook also set the active note to 0
+        this.props.dispatch({ type: "SET_ACTIVE_NOTE", payload: 0 });
+        this.props.dispatch({ type: "SET_LOADING_NOTE", payload: true });
     }
     
     setActiveNoteHandler (i) {
@@ -133,7 +179,9 @@ class LeftNav extends React.Component {
     }
     
     createNewNoteHandler = () => {
-        this.setState({ creatingNewNote: true });
+        if (!this.state.creatingNewNote) {
+            this.setState({ creatingNewNote: true });
+        }
     }
 
     createNewNotebookHandler = () => {
@@ -168,19 +216,23 @@ class LeftNav extends React.Component {
     render () {
         return (
             <Wrapper>
-                <NewNoteBtn onClick={this.createNewNoteHandler}>New Note</NewNoteBtn>
+                <NewNoteBtn creatingNewNote={this.state.creatingNewNote} onClick={this.createNewNoteHandler}>
+                    {!this.state.creatingNewNote &&
+                        <div>New Note</div>
+                    }
+                    {this.state.creatingNewNote &&
+                        <NewNoteForm onSubmit={this.handleSubmitNewNote}>
+                            <NewNoteName ref={this.state.newNoteTitleElem} placeholder="Notebook Title"></NewNoteName>
+                            <NewNoteSubmit type="submit" value="&#10004;"></NewNoteSubmit>
+                            <NewNoteCancel onClick={() => {this.setState({ creatingNewNote: false })}}>&#10006;</NewNoteCancel>
+                        </NewNoteForm>
+                    }
+                </NewNoteBtn>
                 <NewNotebookBtn onClick={this.createNewNotebookHandler}>New Notebook</NewNotebookBtn>
                 
                 {this.state.creatingNewNotebook &&
                     <NewNotebookForm onSubmit={this.handleSubmitNewNotebook}>
                         <NewNotebookName ref={this.state.newNotebookTitleElem} placeholder="Notebook Title"></NewNotebookName>
-                        <NewNotebookSubmit type="submit" value="Submit"></NewNotebookSubmit>
-                    </NewNotebookForm>
-                }
-
-                {this.state.creatingNewNote &&
-                    <NewNotebookForm onSubmit={this.handleSubmitNewNote}>
-                        <NewNotebookName ref={this.state.newNoteTitleElem} placeholder="Notebook Title"></NewNotebookName>
                         <NewNotebookSubmit type="submit" value="Submit"></NewNotebookSubmit>
                     </NewNotebookForm>
                 }
@@ -194,7 +246,6 @@ class LeftNav extends React.Component {
                                 )
                             })}
                         </Notebooks>
-                        <MidLine />
                         <Notes>
                             {this.props.userNotebooks[this.props.activeNotebook].notes.map((note, i) => {
                                 return (

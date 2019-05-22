@@ -7,6 +7,7 @@ const Wrapper = styled.div`
     height: 50px;
     background: #222222;
     display: flex;
+    border-bottom: 2px solid #111111;
 `;
 
 const StyledLink = styled(Link)`
