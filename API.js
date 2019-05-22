@@ -50,6 +50,13 @@ export function updateNotebooks (dispatch, uid, text, activeNote, activeNotebook
         if (doc.exists) {
             let notebooks = doc.data().notebooks;
             let note = notebooks[activeNotebook].notes[activeNote];
+
+            // diff note text
+            if (note.body == text) {
+                console.log('note did not change, skipping save...');
+                return;
+            }
+
             let oldNoteVersion = {
                 title: note.title,
                 body: note.body,
