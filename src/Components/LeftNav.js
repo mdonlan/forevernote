@@ -84,6 +84,22 @@ const NewItemCancel = styled.div`
     }
 `;
 
+const EditBtn = styled.div`
+    height: 50px;
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: #111111;
+    border-bottom: 1px solid #111111;
+    transition: 0.3s;
+
+    :hover {
+        background: #1E1E1E;
+    }
+`;
+
 const UserNoteBooks = styled.div`
     display: flex;
     height: 100%;
@@ -133,7 +149,6 @@ const Note = styled.div`
 
 const NoteTitle = styled.div``;
 const NoteDelete = styled.div``;
-const EditBtn = styled.div``;
 
 class LeftNav extends React.Component {
 
@@ -150,6 +165,8 @@ class LeftNav extends React.Component {
         // when loading a new notebook also set the active note to 0
         this.props.dispatch({ type: "SET_ACTIVE_NOTE", payload: 0 });
         this.props.dispatch({ type: "SET_LOADING_NOTE", payload: true });
+
+        loadUserNotebooks(this.props.dispatch, this.props.uid);
     }
     
     setActiveNoteHandler (i) {
@@ -180,7 +197,8 @@ class LeftNav extends React.Component {
         const newNote = {
             title: this.state.newNoteTitleElem.current.value,
             body: "",
-            id: shortid.generate()
+            id: shortid.generate(),
+            versions: []
         };
 
         createNewNote(this.props.uid, this.props.dispatch, this.props.activeNotebook, newNote);
@@ -240,7 +258,7 @@ class LeftNav extends React.Component {
                                 )
                             })}
                         </Notebooks>
-                        <Scrollbars style={{ width: "100%", height: "100%" }}>
+                        <Scrollbars style={{ width: "50%", height: "100%" }}>
                             <Notes>
                                 {this.props.userNotebooks[this.props.activeNotebook].notes.map((note, i) => {
                                     return (
@@ -248,6 +266,7 @@ class LeftNav extends React.Component {
                                             <NoteTitle>{note.title}</NoteTitle>
                                             {this.state.editMode &&
                                                 <NoteDelete onClick={() => {deleteNote(this.props.uid, this.props.dispatch, this.props.activeNotebook, i)}}>X</NoteDelete>
+                                                // <NoteDelete onClick={() => {createNewDeletedNote(this.props.uid, note)}}>X</NoteDelete>
                                             }
                                         </Note>
                                     )

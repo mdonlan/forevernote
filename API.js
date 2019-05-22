@@ -41,6 +41,7 @@ export function loadUserNotebooks (dispatch, uid, setActiveNote) {
 }
 
 export function updateNotebooks (dispatch, uid, text, activeNote, activeNotebook) {
+    console.log('saving note');
     // save to firebase
     // currently we are replaceing all the user notebook data
     // this is probably not efficient, and we should try to just replace the specific note
@@ -49,6 +50,12 @@ export function updateNotebooks (dispatch, uid, text, activeNote, activeNotebook
         if (doc.exists) {
             let notebooks = doc.data().notebooks;
             let note = notebooks[activeNotebook].notes[activeNote];
+            let oldNoteVersion = {
+                title: note.title,
+                body: note.body,
+                id: note.id
+            };
+            note.versions.push(oldNoteVersion); // save old body text in versions
             if (note) {
                 note.body = text;
                 firebase.firestore().collection("users").doc(uid).update({
@@ -103,6 +110,7 @@ export function createNewNotebook (uid, newNotebook) {
 }
 
 export function deleteNote (uid, dispatch, activeNotebook, activeNote) {
+    createNewDeletedNote(uid, activeNotebook, activeNote);
     firebase.firestore().collection("users").doc(uid).get()
     .then((doc) => {    
         if (doc.exists) {
@@ -115,6 +123,27 @@ export function deleteNote (uid, dispatch, activeNotebook, activeNote) {
             .then(function() {
                 console.log("Document successfully updated!");
                 loadUserNotebooks(dispatch, uid);
+            });
+        } 
+        else console.log('Failed to find document.');       
+    })
+    .catch(error => console.log(error));
+}
+
+export function createNewDeletedNote (uid, activeNotebook, activeNote) {
+    const state = store.getState();
+    const note = state.userNotebooks[activeNotebook].notes[activeNote];
+    firebase.firestore().collection("users").doc(uid).get()
+    .then((doc) => {    
+        if (doc.exists) {
+            let deletedNotes = doc.data().deletedNotes;
+            deletedNotes.push(note);
+            firebase.firestore().collection("users").doc(uid).update({
+                deletedNotes: deletedNotes
+            })
+            .then(function() {
+                // console.log("Note added successfully!");
+                // loadUserNotebooks(dispatch, uid, true);
             });
         } 
         else console.log('Failed to find document.');       
