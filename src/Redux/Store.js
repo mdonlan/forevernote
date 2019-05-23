@@ -6,7 +6,7 @@ const initialState = {
     activeNotebook: 0,
     activeNote: 0, // index in userNotes
     uid: null,
-    isLoadingNote: false
+    isLoadingNote: false,
 };
 
 function reducer (state = initialState, action) {

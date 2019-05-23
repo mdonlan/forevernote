@@ -3,6 +3,8 @@ import { connect } from 'react-redux';
 import styled from 'styled-components';
 import shortid from 'shortid';
 import { Scrollbars } from 'react-custom-scrollbars';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 
 import { loadUserNotebooks, createNewNote, createNewNotebook, deleteNote } from '../../API';
 
@@ -100,6 +102,16 @@ const EditBtn = styled.div`
     }
 `;
 
+const SectionTitle = styled.div`
+    font-size: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    font-variant: small-caps;
+`;
+
 const UserNoteBooks = styled.div`
     display: flex;
     height: 100%;
@@ -139,6 +151,7 @@ const Note = styled.div`
     cursor: pointer;
     display: flex;
     justify-content: space-between;
+    align-items: center;
 
     background: ${props => props.active == props.index ? "#2164F0" : "#234282"};
 
@@ -148,7 +161,14 @@ const Note = styled.div`
 `;
 
 const NoteTitle = styled.div``;
-const NoteDelete = styled.div``;
+
+const DeleteIcon = styled(FontAwesomeIcon)`
+    transition: 0.3s;
+
+    :hover {
+        color: #CA4715;
+    }
+`;
 
 class LeftNav extends React.Component {
 
@@ -252,6 +272,7 @@ class LeftNav extends React.Component {
                 {this.props.userNotebooks.length > 0 &&
                     <UserNoteBooks>
                         <Notebooks>
+                            <SectionTitle>Notebooks</SectionTitle>
                             {this.props.userNotebooks.map((notebook, i) => {
                                 return (
                                     <Notebook active={this.props.activeNotebook} index={i}  key={notebook.name} onClick={() => {this.setActiveNotebookHandler(i)}} >{notebook.name}</Notebook>
@@ -260,13 +281,13 @@ class LeftNav extends React.Component {
                         </Notebooks>
                         <Scrollbars style={{ width: "50%", height: "100%" }}>
                             <Notes>
+                                <SectionTitle>Notes</SectionTitle>
                                 {this.props.userNotebooks[this.props.activeNotebook].notes.map((note, i) => {
                                     return (
                                         <Note active={this.props.activeNote} index={i} key={note.id} onClick={() => {this.setActiveNoteHandler(i)}} >
                                             <NoteTitle>{note.title}</NoteTitle>
                                             {this.state.editMode &&
-                                                <NoteDelete onClick={() => {deleteNote(this.props.uid, this.props.dispatch, this.props.activeNotebook, i)}}>X</NoteDelete>
-                                                // <NoteDelete onClick={() => {createNewDeletedNote(this.props.uid, note)}}>X</NoteDelete>
+                                                <DeleteIcon icon={faTimesCircle} onClick={(e) => {e.stopPropagation(); deleteNote(this.props.uid, this.props.dispatch, this.props.activeNotebook, i)}}></DeleteIcon>
                                             }
                                         </Note>
                                     )

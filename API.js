@@ -117,6 +117,12 @@ export function createNewNotebook (uid, newNotebook) {
 }
 
 export function deleteNote (uid, dispatch, activeNotebook, activeNote) {
+
+    // update the active note to the one before the deleted note
+    let newActiveNote = activeNote > 0 ? activeNote - 1 : 0;
+    console.log("newActiveNote: " + newActiveNote);
+    dispatch({ type: "SET_ACTIVE_NOTE", payload: newActiveNote });
+
     createNewDeletedNote(uid, activeNotebook, activeNote);
     firebase.firestore().collection("users").doc(uid).get()
     .then((doc) => {    

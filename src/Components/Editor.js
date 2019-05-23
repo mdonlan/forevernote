@@ -1,6 +1,8 @@
 import React from "react";
 import { connect } from 'react-redux';
 import styled from 'styled-components';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowCircleLeft, faArrowCircleRight } from '@fortawesome/free-solid-svg-icons'
 
 import { updateNotebooks } from '../../API';
 
@@ -13,10 +15,19 @@ const Wrapper = styled.div`
 `;
 
 const Editable = styled.div`
-    height: calc(100% - 52px);
+    height: ${props => props.viewingVersions ? "calc(100% - 82px);" : "calc(100% - 52px);"};
     width: calc(100% - 20px);
     padding: 10px;
     outline: 0px solid transparent;
+`;
+
+const OldVersion = styled.div`
+    position: absolute;
+    top: 62px;
+    height: calc(100% - 82px);
+    width: calc(100% - 20px);
+    padding: 10px;
+    background: #333333;
 `;
 
 // the loading container blocks the note view while the new note is being retrieved from the server
@@ -59,7 +70,19 @@ const Versions = styled.div`
     display: flex;
 `;
 
-const Version = styled.div``;
+const VersionSelection = styled.div`
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: #B78513;
+    height: 30px;
+`;
+
+const SelectionLeft = styled.div``;
+const SelectionRight = styled.div`
+    display: flex;
+`;
+
 const ViewVersionsBtn = styled.div``;
 const PrevVersion = styled.div``;
 const NextVersion = styled.div``;
@@ -105,7 +128,9 @@ class Editor extends React.Component {
         if (nextProps.activeNote != null && nextProps.userNotebooks.length > 0) {
             // check if there are any notes in the active notebook
             // if note render a create a new note button
+            console.log(this.props.activeNote);
             if (nextProps.userNotebooks[nextProps.activeNotebook].notes.length > 0) {
+                console.log(nextProps.userNotebooks[nextProps.activeNotebook].notes[nextProps.activeNote]);
                 this.state.editableElem.current.innerHTML = nextProps.userNotebooks[nextProps.activeNotebook].notes[nextProps.activeNote].body;
                 this.setState({ title: nextProps.userNotebooks[nextProps.activeNotebook].notes[nextProps.activeNote].title });
             } else {
@@ -148,26 +173,13 @@ class Editor extends React.Component {
     handleVersion (dir) {
         let numVersions = this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions.length;
         if (dir == 1) {
-            console.log('up');
             if (this.state.onVersion < numVersions) {
-                this.setState({ onVersion: this.state.onVersion + 1}, () => {
-                    if (this.state.onVersion == numVersions) {
-                        this.state.editableElem.current.innerHTML = this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].body;
-                        this.setState({ title: this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].title });
-                    } else {
-                        this.state.editableElem.current.innerHTML = this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions[this.state.onVersion].body;
-                        this.setState({ title: this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions[this.state.onVersion].title });
-                    }
-                });
-            }
+                this.setState({ onVersion: this.state.onVersion + 1});
+           }
         }
         else {
-            console.log('down');
             if (this.state.onVersion > 0) {
-                this.setState({ onVersion: this.state.onVersion - 1}, () => {
-                    this.state.editableElem.current.innerHTML = this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions[this.state.onVersion].body;
-                    this.setState({ title: this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions[this.state.onVersion].title });
-                });
+                this.setState({ onVersion: this.state.onVersion - 1});
             }
         }
     }
@@ -185,29 +197,33 @@ class Editor extends React.Component {
                     }
                     {this.props.userNotebooks[this.props.activeNotebook] &&
                         <Versions>
-                            <Version>
-                                Version # 
-                                {this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote] &&
-                                    this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions.length + 1
-                                }
-                            </Version>
-                            <ViewVersionsBtn onClick={() => {this.setState({ viewingOldVersions: true, onVersion: this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions.length})}}>View Versions</ViewVersionsBtn>
-                            {this.state.viewingOldVersions &&
-                                <React.Fragment>
-                                    <PrevVersion onClick={() => {this.handleVersion(-1)}}>&lt;</PrevVersion>
-                                    <NextVersion onClick={() => {this.handleVersion(1)}}>&gt;</NextVersion>
-                                </React.Fragment>
-                            }
+                            <ViewVersionsBtn onClick={() => {this.setState({ viewingOldVersions: this.state.viewingOldVersions ? false : true, onVersion: this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions.length})}}>Versions</ViewVersionsBtn>
                         </Versions>
                     } 
                 </EditorTop>
                 {this.state.viewingOldVersions && 
-                    <React.Fragment>
-                        <ViewingVersionsNotification>Viewing Versions</ViewingVersionsNotification>
-                        <div>{this.state.onVersion + 1}</div>
-                    </React.Fragment>
+                    <VersionSelection>
+                        <SelectionLeft>
+                            <ViewingVersionsNotification>Viewing Versions</ViewingVersionsNotification>
+                        </SelectionLeft>
+                        <SelectionRight>
+                            <div>Version: {this.state.onVersion + 1}</div>
+                            <PrevVersion onClick={() => {this.handleVersion(-1)}}>
+                                <FontAwesomeIcon icon={faArrowCircleLeft} />
+                            </PrevVersion>
+                            <NextVersion onClick={() => {this.handleVersion(1)}}>
+                                <FontAwesomeIcon icon={faArrowCircleRight} />
+                            </NextVersion>
+                        </SelectionRight>
+                    </VersionSelection>
                 }
-                <Editable ref={this.state.editableElem} contentEditable={true} onBlur={this.handleBlur} autoFocus ></Editable>
+                <Editable viewingVersions={this.state.viewingOldVersions} ref={this.state.editableElem} contentEditable={true} onBlur={this.handleBlur} autoFocus ></Editable>
+                {this.state.viewingOldVersions && this.state.onVersion < this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions.length &&
+                    <OldVersion dangerouslySetInnerHTML={{__html: this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions[this.state.onVersion].body}} />
+                }
+                {this.state.viewingOldVersions && this.state.onVersion == this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].versions.length &&
+                    <OldVersion dangerouslySetInnerHTML={{__html: this.props.userNotebooks[this.props.activeNotebook].notes[this.props.activeNote].body}} />
+                }
                 {this.props.isLoadingNote &&
                     <LoadingContainer></LoadingContainer>
                 }
